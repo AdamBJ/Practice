@@ -165,6 +165,7 @@ string convertToA(string orig) {
 				if (rslt.size() != 0) {//and backtrack, assuming we can
 					
 					if (charbuf = (int)rslt[rslt.size() - 1] == 65) {
+						//GITTEST
 						//if we've run an entire exponent without finding a coeff, that means prev coeff is A.
 						do {
 							rslt.resize(rslt.size() - 1);//chop off the offending A
