@@ -163,7 +163,7 @@ string convertToA(string orig) {
 			if (letter == 0) { //0 does not exist in our number system, we can't insert it. what we have to do instead is backtrack and take the next smallest possible letter...				
 				letter = 26;//reset our stuff... don't decrement exponent as we will be running it again after we backtrack
 				if (rslt.size() != 0) {//and backtrack, assuming we can
-					//dddd
+					//ddddd
 					if (charbuf = (int)rslt[rslt.size() - 1] == 65) {
 						//if we've run an entire exponent without finding a coeff, that means prev coeff is A.
 						do {
