@@ -156,79 +156,63 @@ string convertToA(string orig) {
 	as large a bite out of our base 10 total using base 26 as possible, without going over. Repeat this with 
 	whats left over, then again... until our original base 10 number, colsInt, is gone.*/
 	while (colsInt != 0) {
-		backtrack:
+		rerunCurrExponent:
 		while (colsInt - (pow(26.0, exponent) * letter) < 0) { //if we've taken too big a bite, take a step back. first way we can step back is by shrinking the coefficient.
 		test = colsInt - (pow(26.0, exponent) * letter);
 			letter--;
-			if (letter == 0) { //0 does not exist in our number system, we can't insert it. what we have to do instead is backtrack and take the next smallest possible letter...				
-				letter = 26;//reset our stuff... don't decrement exponent as we will be running it again after we backtrack
-				if (rslt.size() != 0) {//and backtrack, assuming we can
-					
-					if (charbuf = (int)rslt[rslt.size() - 1] == 65) {
-						//GITTEST
-						//if we've run an entire exponent without finding a coeff, that means prev coeff is A.
-						do {
-							rslt.resize(rslt.size() - 1);//chop off the offending A
-							colsInt += pow(26.0, exponent + 1);
-							charbuf = (int)rslt[rslt.size() - 1];
-							charbuf--;
-							exponent++;
-						} while (charbuf == 64);
-
-						//if charbuf=64, we have a problem. We've backtracked, but next highest exp coeff is A. Can't decrem A, its lowest coeff. Soln is to decrem the coeff at the level above this one.
-						rslt.resize(rslt.size() - 1);
-						//26^2*1 is equiv to 26^1 * 26. In cases like this we take the smaller exponent, if we don't
-						//we will go through the smaller exponent without getting a result, effecively inserting a blank
-						rslt += (char)charbuf;
-						colsInt += pow(26.0, exponent + 1);//return the values we took from colsInt to complete the backtrack. exp+1 because we decremented at line 195
-						//if we are trying to decrement an "A", we need a different approach. We can't decrement it, so we have to decrement the exponent and choose Z (it's equivalent).
-						//then we need to decrement exponent again, as there is no need to run the loop for the "Z" exponent. We already know we will be choosing Z as our coefficient.
-					}
-				}
-				else exponent--;
+			if (letter == 0) { 
+				break;			
 			}
-			
 		}
-		//if we're here, we've found an exponent/letter combo that doesn't take too big a bite. Deal with special cases, then 
-		//start the process again with the remainder
 
-		//test for special cases: what if we don't have a remainder to pass along? can't pass along 0, we can't represent it!
-		if (exponent != 0 && (colsInt - (pow(26.0, exponent) * letter) == 0)) {
-			letter--;
-			if (letter == 0) {//if the problem coefficient is A, we have a special case. Can't just decrement letter, that would make it '@'. Soln
-				//is to go back up a level and decrement the letter. In rare cases, we might encounter a string of 'A's as we backtrack. We'd need to backtrack
-				//out of the As, which may take mutliple steps. In a word, backtrack until we can take a smaller bite.
-				
-				if (exponent != 4){
-					exponent++;
-					//if we're subtracting from A, can't just make it Z! Need to decrement the previous coefficient and run the current exponent loop again
-					if (rslt.size() != 0) {
-						
-						charbuf = (int)rslt[rslt.size() - 1];//decrement the previous exponent's coefficient, then take a run at the current exponent again (with th new remainder)
+		/*Test for our two special cases. First case is that we find a coeff that works but we're not left with a remainder to pass on.
+		The other case is we can't find a coefficient that works. The way to fix both these problems is the same: decrement the coefficient.
+		If this is not allowable because the coefficient is already as small as possible, ie 'A', or we have tried all the possibile coefficients
+		and none of them work, we decrement the coefficient tied to the previous exponent. Note that at this point we still
+		haven't recorded anything for the current exponent so we don't need to worry about deleting anything from the result. Also note that
+		it is possible that the coefficient of the previous exponent is also 'A', in which case we can't decrement it. In this case we have to
+		remove it, and move along to the next exponent. If we get all the way to exponent=4 and we encounter this problem we have no choice but to
+		decrement the exponent and to start the result from the smallest exponent, 3.*/
+
+		if (exponent != 0 && (colsInt - (pow(26.0, exponent) * letter) == 0) || letter == 0) {
+			if (letter != 0 && letter != 1) letter--; //if the letter isn't 'A', or we haven't run through all the letters, we can simply decrement
+			else {//if it is 'A', we need to roll back the exponent and decrement the corresponding coefficient. Same thing if letter == 0 and we've tried every coefficient for the current exponent.
+				if (rslt.size() != 0){ //If the rslt string isn't empty we can backtrack. If it is empty we decrement the exponent and try at the next level down.
+					
+					do{
+						if (rslt.size() == 0) break;
+						exponent++;
+						charbuf = (int)rslt[rslt.size() - 1];
 						charbuf--;
-			
-						rslt.resize(rslt.size() - 1);
-
-						rslt += (char)charbuf; //attach the newly decremented coefficent
-
-						colsInt += pow(26.0, exponent);//add the total we subtracted in error prior to the backtrack
+						if (charbuf == 64) { //remove the 'A'
+							rslt.resize(rslt.size() - 1);
+							colsInt += pow(26.0, exponent);
+						}
+					} while (charbuf == 64);
 						
-						exponent--; //get back to the current exponent
-						letter = 26;//reset
-						goto backtrack;//and run the loop
+					//remove the pre-incremented letter
+					if (rslt.size() != 0){
+						rslt.resize(rslt.size() - 1);
+						colsInt += pow(26.0, exponent);
+
+						//add the newly incremented letter
+						rslt += (char)charbuf;
 					}
-					else {
-						exponent--;
-						letter = 26;
-						goto backtrack;
-					}
+
+					//reset, prepare to run the exponent loop again for the next exponent in the series
+					exponent--; 
+					letter = 26;
+					goto rerunCurrExponent;
+					
+				
 				}
-				else {//if exponent 4 for there is no higher level to backtrack to. Here we simply ignore exponent of 4 and move on to the next smaller one.
+				else {
 					exponent--;
 					letter = 26;
-					goto backtrack;
+					goto rerunCurrExponent;
 				}
 			}
+			
 			//forcibily reduce bite size. consider 494: when exp is 1 and letter is S we would have no remainder (26*19=494). Without special
 			//consideration, we would except S as our answer. This would work if we could say S0, but there is no 0 in our special bas 26 rep. S is for
 			//column 19, not column 294. To fix this, reduce bite size and pass along the remainder.
